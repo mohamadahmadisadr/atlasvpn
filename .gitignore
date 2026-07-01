@@ -1,0 +1,39 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool, consumed by the go tool cover
+*.out
+*.prof
+
+# Go workspace files
+go.work
+go.work.sum
+
+# Common IDE/editor configs
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Icon?
+ehthumbs.db
+Thumbs.db
+
+# Project-specific builds (if placed in root or build/bin directories)
+/bin/
+/dist/
+/out/
+/build/
