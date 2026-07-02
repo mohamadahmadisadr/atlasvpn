@@ -9,6 +9,12 @@ import (
 
 func (p *Packet) SerializePacket() ([]byte, error) {
 
+	if err := p.HeaderValidate(); err != nil {
+		return nil, err
+	}
+
+	p.Length = uint16(len(p.Payload))
+
 	if err := p.Validate(); err != nil {
 		return nil, err
 	}
@@ -23,7 +29,6 @@ func (p *Packet) SerializePacket() ([]byte, error) {
 	if err := binary.Write(&buf, binary.BigEndian, p.PacketID); err != nil {
 		return nil, err
 	}
-	p.Length = uint16(len(p.Payload))
 
 	if err := binary.Write(&buf, binary.BigEndian, p.Length); err != nil {
 		return nil, err
@@ -48,15 +53,20 @@ func DeserializePacket(data []byte) (*Packet, error) {
 	if err := binary.Read(readBuff, binary.BigEndian, &deserializedPacket.PacketID); err != nil {
 		return nil, err
 	}
+
+	if err := deserializedPacket.HeaderValidate(); err != nil {
+		return nil, err
+	}
+
 	if err := binary.Read(readBuff, binary.BigEndian, &deserializedPacket.Length); err != nil {
 		return nil, err
 	}
-
-	if err := deserializedPacket.Validate(); err != nil {
-		return nil, err
+	if deserializedPacket.Length > MTU {
+		return nil, fmt.Errorf("packet exceeded the MTU")
 	}
 
 	deserializedPacket.Payload = make([]byte, int(deserializedPacket.Length))
+
 	_, err := io.ReadFull(readBuff, deserializedPacket.Payload)
 	if err != nil {
 		return nil, err
@@ -66,7 +76,7 @@ func DeserializePacket(data []byte) (*Packet, error) {
 
 }
 
-func (p *Packet) Validate() error {
+func (p *Packet) HeaderValidate() error {
 	if p.Version > 2 {
 		return fmt.Errorf("not supported version")
 	}
@@ -74,7 +84,10 @@ func (p *Packet) Validate() error {
 	if !p.Type.isValidPacket() {
 		return fmt.Errorf("not a valid packet type")
 	}
+	return nil
+}
 
+func (p *Packet) Validate() error {
 	if p.Length > MTU {
 		return fmt.Errorf("packet exceeded the MTU")
 	}
