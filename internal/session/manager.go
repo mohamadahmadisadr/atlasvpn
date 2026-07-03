@@ -7,7 +7,7 @@ import (
 )
 
 type Manager struct {
-	mu       *sync.RWMutex
+	mu       sync.RWMutex
 	sessions map[uint32]*Session
 }
 
