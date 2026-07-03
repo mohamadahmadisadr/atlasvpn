@@ -3,9 +3,13 @@ package udp
 import (
 	"fmt"
 	"net"
+
+	"github.com/mohamadahmadisadr/atlasvpn/internal/protocol"
+	"github.com/mohamadahmadisadr/atlasvpn/internal/session"
 )
 
 func Serve() error {
+	sessionManager := session.NewManager()
 	addr := &net.UDPAddr{
 		IP:   net.ParseIP("127.0.0.1"),
 		Port: 3000,
@@ -30,6 +34,30 @@ func Serve() error {
 			continue
 		}
 
+		pckt, err := protocol.DeserializePacket(buffer[:])
+		if err != nil {
+			return err
+		}
+
+		switch pckt.Type {
+		case protocol.PacketTypeHandshake:
+			sessionID := session.GenerateSessionID()
+			session := sessionManager.Create(sessionID, remoteAddr)
+			response := protocol.Packet{
+				Version:  1,
+				Type:     protocol.PacketTypeHandshake,
+				PacketID: session.ID,
+				Payload:  []byte("OK"),
+			}
+
+			data, err := response.SerializePacket()
+			if err != nil {
+				return err
+			}
+			if _, err := conn.WriteToUDP(data, session.RemoteAddr); err != nil {
+				return err
+			}
+		}
 		message := string(buffer[:n])
 		fmt.Printf("Received %d bytes from %s: %s\n", n, remoteAddr, message)
 
